@@ -71,4 +71,16 @@ public class Food {
     public void setCarbsPer100g(Double carbsPer100g) {
         this.carbsPer100g = carbsPer100g;
     }
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 }

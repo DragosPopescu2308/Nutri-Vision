@@ -3,6 +3,7 @@ package com.dragos.nutrivision.service;
 import com.dragos.nutrivision.dto.FoodRequestDto;
 import com.dragos.nutrivision.dto.FoodResponseDto;
 import com.dragos.nutrivision.entity.Food;
+import com.dragos.nutrivision.entity.User;
 import com.dragos.nutrivision.repository.FoodRepository;
 import org.springframework.stereotype.Service;
 
@@ -11,13 +12,17 @@ import java.util.List;
 @Service
 public class FoodService {
     private final FoodRepository foodRepository;
+    private final CurrentUserService currentUserService;
 
-    public FoodService(FoodRepository foodRepository){
+    public FoodService(FoodRepository foodRepository, CurrentUserService currentUserService) {
         this.foodRepository = foodRepository;
+        this.currentUserService = currentUserService;
     }
 
     public FoodResponseDto createFood(FoodRequestDto foodRequestDto) {
 
+
+        User currentUser = currentUserService.getCurrentUser();
 
         Food food = new Food();
         food.setName(foodRequestDto.getName());
@@ -26,6 +31,7 @@ public class FoodService {
         food.setProteinsPer100g(foodRequestDto.getProteinsPer100g());
         food.setFatPer100g(foodRequestDto.getFatPer100g());
         food.setCarbsPer100g(foodRequestDto.getCarbsPer100g());
+        food.setUser(currentUser);
 
         Food savedFood = foodRepository.save(food);
         return toDto(savedFood);
@@ -34,18 +40,25 @@ public class FoodService {
     }
 
     public List<FoodResponseDto> getAllFoods() {
-        List<FoodResponseDto> response = foodRepository.findAll().stream()
+
+        User currentUser = currentUserService.getCurrentUser();
+
+        List<FoodResponseDto> response = foodRepository.findAllByUser(currentUser).stream()
                 .map(this::toDto)
                 .toList();
         return response;
     }
 
     public FoodResponseDto getById(Long id){
-        return toDto(foodRepository.findById(id).orElseThrow(() -> new RuntimeException("Food not found")));
+        User current = currentUserService.getCurrentUser();
+        return toDto(foodRepository.findByIdAndUser(id, current).orElseThrow(() -> new RuntimeException("Food not found")));
     }
 
     public FoodResponseDto updateFood(Long id, FoodRequestDto foodRequestDto){
-        Food food = foodRepository.findById(id).orElseThrow(() -> new RuntimeException("Food not found"));
+        User currentUser = currentUserService.getCurrentUser();
+
+        Food food = foodRepository.findByIdAndUser(id, currentUser)
+                .orElseThrow(() -> new RuntimeException("Food not found"));
 
         food.setName(foodRequestDto.getName());
         food.setBrand(foodRequestDto.getBrand());
@@ -58,7 +71,13 @@ public class FoodService {
     }
 
     public void deleteFood(Long id){
-        foodRepository.deleteById(id);
+
+        User currentUser = currentUserService.getCurrentUser();
+
+        Food food = foodRepository.findByIdAndUser(id, currentUser)
+                .orElseThrow(() -> new RuntimeException("Food not found"));
+
+        foodRepository.delete(food);
     }
 
 

@@ -6,6 +6,7 @@ import com.dragos.nutrivision.dto.RecipeRequestDto;
 import com.dragos.nutrivision.dto.RecipeResponseDto;
 import com.dragos.nutrivision.entity.Recipe;
 import com.dragos.nutrivision.entity.RecipeIngredient;
+import com.dragos.nutrivision.entity.User;
 import com.dragos.nutrivision.repository.FoodRepository;
 import com.dragos.nutrivision.repository.RecipeRepository;
 import org.springframework.stereotype.Service;
@@ -18,13 +19,17 @@ import java.util.List;
 public class RecipeService {
     private final RecipeRepository recipeRepository;
     private final FoodRepository foodRepository;
+    private final CurrentUserService currentUserService;
 
-    public RecipeService(RecipeRepository recipeRepository, FoodRepository foodRepository) {
+    public RecipeService(RecipeRepository recipeRepository, FoodRepository foodRepository, CurrentUserService currentUserService) {
+        this.currentUserService = currentUserService;
         this.recipeRepository = recipeRepository;
         this.foodRepository = foodRepository;
     }
 
     public RecipeResponseDto createRecipe(RecipeRequestDto recipeRequestDto) {
+
+        User currentUser = currentUserService.getCurrentUser();
 
         double totalCalories = 0;
         double totalProteins = 0;
@@ -44,7 +49,8 @@ public class RecipeService {
         recipe.setFinalCookedWeight(recipeRequestDto.getFinalCookedWeight());
 
         for (var ingredient : recipeRequestDto.getIngredients()) {
-            var food = foodRepository.findById(ingredient.getFoodId()).orElseThrow(() -> new RuntimeException("Food not found"));
+            var food = foodRepository.findByIdAndUser(ingredient.getFoodId(), currentUser)
+                    .orElseThrow(() -> new RuntimeException("Food not found"));
 
 
             totalCalories = totalCalories +  (food.getCaloriesPer100g() * ingredient.getWeightInGrams() / 100);
@@ -61,6 +67,7 @@ public class RecipeService {
         }
 
             recipe.setIngredients(ingredients);
+            recipe.setUser(currentUser);
 
 
 
@@ -89,7 +96,8 @@ public class RecipeService {
 
     @Transactional(readOnly = true)
     public List<RecipeResponseDto> getAllRecipes() {
-        List<RecipeResponseDto> response = recipeRepository.findAll().stream()
+        User current = currentUserService.getCurrentUser();
+        List<RecipeResponseDto> response = recipeRepository.findAllByUser(current).stream()
                 .map(this::toDto)
                 .toList();
         return response;
@@ -97,20 +105,23 @@ public class RecipeService {
 
     @Transactional(readOnly = true)
     public RecipeResponseDto getById(Long id){
-        return toDto(recipeRepository.findById(id).orElseThrow(() -> new RuntimeException("Recipe not found")));
+        User current = currentUserService.getCurrentUser();
+        return toDto(recipeRepository.findByIdAndUser(id, current).orElseThrow(() -> new RuntimeException("Recipe not found")));
     }
 
     public void deleteRecipe(Long id){
-        if(!recipeRepository.existsById(id)){
-            throw new RuntimeException("Recipe not found");
-        }
-        recipeRepository.deleteById(id);
-    }
+        User current = currentUserService.getCurrentUser();
 
+        Recipe recipe = recipeRepository.findByIdAndUser(id, current)
+                .orElseThrow(() -> new RuntimeException("Recipe not found"));
+
+        recipeRepository.delete(recipe);
+    }
 
     @Transactional
     public RecipeResponseDto updateRecipe(Long id, RecipeRequestDto recipeRequestDto){
-        Recipe recipe = recipeRepository.findById(id)
+        User current = currentUserService.getCurrentUser();
+        Recipe recipe = recipeRepository.findByIdAndUser(id, current)
                 .orElseThrow(() -> new RuntimeException("Recipe not found"));
 
         double totalCalories = 0;
@@ -130,7 +141,8 @@ public class RecipeService {
 
 
         for (var ingredient : recipeRequestDto.getIngredients()) {
-            var food = foodRepository.findById(ingredient.getFoodId()).orElseThrow(() -> new RuntimeException("Food not found"));
+            var food = foodRepository.findByIdAndUser(ingredient.getFoodId(), current)
+                    .orElseThrow(() -> new RuntimeException("Food not found"));
 
 
             totalCalories = totalCalories +  (food.getCaloriesPer100g() * ingredient.getWeightInGrams() / 100);
