@@ -1,0 +1,6 @@
+*
+!.gitignore
+!Desktop/
+Desktop/*
+!Desktop/NutriVision/
+!Desktop/NutriVision/**
