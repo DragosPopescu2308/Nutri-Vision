@@ -9,30 +9,36 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Initialize auth state on mount
   useEffect(() => {
     const savedToken = getToken();
     const savedUser = getCurrentUser();
 
-    if (savedToken && savedUser) {
+    if (savedToken) {
       setTokenState(savedToken);
       setUser(savedUser);
       setIsAuthenticated(true);
+    } else {
+      setTokenState(null);
+      setUser(null);
+      setIsAuthenticated(false);
     }
+
     setLoading(false);
   }, []);
 
   const login = useCallback((user, token) => {
     setToken(token);
     setCurrentUser(user);
+
     setTokenState(token);
-    setUser(user);
+    setUser(user || null);
     setIsAuthenticated(true);
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('jwtToken');
     localStorage.removeItem('user');
+
     setTokenState(null);
     setUser(null);
     setIsAuthenticated(false);
@@ -52,11 +58,10 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = React.useContext(AuthContext);
+
   if (!context) {
     throw new Error('useAuth must be used within AuthProvider');
   }
+
   return context;
 };
-
-
-

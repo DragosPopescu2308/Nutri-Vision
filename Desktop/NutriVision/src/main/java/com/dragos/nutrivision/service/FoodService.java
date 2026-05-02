@@ -5,6 +5,7 @@ import com.dragos.nutrivision.dto.FoodResponseDto;
 import com.dragos.nutrivision.entity.Food;
 import com.dragos.nutrivision.entity.User;
 import com.dragos.nutrivision.repository.FoodRepository;
+import com.dragos.nutrivision.repository.RecipeIngredientRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,9 +14,11 @@ import java.util.List;
 public class FoodService {
     private final FoodRepository foodRepository;
     private final CurrentUserService currentUserService;
+    private final RecipeIngredientRepository recipeIngredientRepository;
 
-    public FoodService(FoodRepository foodRepository, CurrentUserService currentUserService) {
+    public FoodService(FoodRepository foodRepository, CurrentUserService currentUserService, RecipeIngredientRepository recipeIngredientRepository) {
         this.foodRepository = foodRepository;
+        this.recipeIngredientRepository = recipeIngredientRepository;
         this.currentUserService = currentUserService;
     }
 
@@ -57,8 +60,14 @@ public class FoodService {
     public FoodResponseDto updateFood(Long id, FoodRequestDto foodRequestDto){
         User currentUser = currentUserService.getCurrentUser();
 
+
+
         Food food = foodRepository.findByIdAndUser(id, currentUser)
                 .orElseThrow(() -> new RuntimeException("Food not found"));
+
+        if (recipeIngredientRepository.existsByFood(food)) {
+            throw new RuntimeException("Cannot update food because it is used in recipes");
+        }
 
         food.setName(foodRequestDto.getName());
         food.setBrand(foodRequestDto.getBrand());
@@ -76,6 +85,10 @@ public class FoodService {
 
         Food food = foodRepository.findByIdAndUser(id, currentUser)
                 .orElseThrow(() -> new RuntimeException("Food not found"));
+
+        if (recipeIngredientRepository.existsByFood(food)) {
+            throw new RuntimeException("Cannot delete food because it is used in recipes");
+        }
 
         foodRepository.delete(food);
     }

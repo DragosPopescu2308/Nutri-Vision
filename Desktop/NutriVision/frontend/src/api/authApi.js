@@ -12,10 +12,10 @@ const authApi = axios.create({
 // Auth endpoints
 export const authService = {
   login: (email, password) =>
-    authApi.post('/auth/login', { email, password }),
+      authApi.post('/auth/login', { email, password }),
 
   register: (fullName, email, password) =>
-    authApi.post('/auth/register', { fullName, email, password }),
+      authApi.post('/auth/register', { fullName, email, password }),
 
   logout: () => {
     localStorage.removeItem('jwtToken');
@@ -24,21 +24,45 @@ export const authService = {
 };
 
 // Get token from localStorage
-export const getToken = () => localStorage.getItem('jwtToken');
+export const getToken = () => {
+  return localStorage.getItem('jwtToken');
+};
 
 // Set token in localStorage
-export const setToken = (token) => localStorage.setItem('jwtToken', token);
+export const setToken = (token) => {
+  if (!token || token === 'undefined' || token === 'null') {
+    localStorage.removeItem('jwtToken');
+    return;
+  }
+
+  localStorage.setItem('jwtToken', token);
+};
 
 // Get current user from localStorage
 export const getCurrentUser = () => {
   const user = localStorage.getItem('user');
-  return user ? JSON.parse(user) : null;
+
+  if (!user || user === 'undefined' || user === 'null') {
+    localStorage.removeItem('user');
+    return null;
+  }
+
+  try {
+    return JSON.parse(user);
+  } catch (error) {
+    localStorage.removeItem('user');
+    return null;
+  }
 };
 
 // Set current user in localStorage
-export const setCurrentUser = (user) => localStorage.setItem('user', JSON.stringify(user));
+export const setCurrentUser = (user) => {
+  if (!user || user === 'undefined' || user === 'null') {
+    localStorage.removeItem('user');
+    return;
+  }
+
+  localStorage.setItem('user', JSON.stringify(user));
+};
 
 export default authApi;
-
-
-
