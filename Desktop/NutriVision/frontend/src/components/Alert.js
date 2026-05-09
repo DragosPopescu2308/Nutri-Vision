@@ -1,31 +1,48 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 function Alert({ type = 'info', message, onClose }) {
-  if (!message) return null;
+    useEffect(() => {
+        if (!message || !onClose) return;
 
-  React.useEffect(() => {
-    const timer = setTimeout(onClose, 5000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
+        const timer = setTimeout(() => {
+            onClose();
+        }, 5000);
 
-  return (
-    <div className={`alert alert-${type}`}>
-      <span>{message}</span>
-      <button 
-        onClick={onClose}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: '1.2rem',
-          marginLeft: 'auto',
-        }}
-      >
-        ✕
-      </button>
-    </div>
-  );
+        return () => clearTimeout(timer);
+    }, [message, onClose]);
+
+    if (!message) {
+        return null;
+    }
+
+    return (
+        <div className={`alert alert-${type}`}>
+      <span>
+        {type === 'success' && '✅'}
+          {type === 'error' && '⚠️'}
+          {type === 'info' && 'ℹ️'}
+      </span>
+
+            <span>{message}</span>
+
+            {onClose && (
+                <button
+                    type="button"
+                    onClick={onClose}
+                    style={{
+                        marginLeft: 'auto',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '1.2rem',
+                        color: 'inherit',
+                    }}
+                >
+                    ×
+                </button>
+            )}
+        </div>
+    );
 }
 
 export default Alert;
-

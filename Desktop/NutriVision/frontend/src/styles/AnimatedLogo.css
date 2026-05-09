@@ -1,0 +1,19 @@
+.chicken-arm {
+    transform-box: fill-box;
+    transform-origin: center;
+}
+.left-arm {
+    animation: flexLeft 2s ease-in-out infinite;
+}
+.right-arm {
+    animation: flexRight 2s ease-in-out infinite;
+}
+
+@keyframes flexLeft {
+    0%, 100% { transform: rotate(-10deg) translateY(0); }
+    50% { transform: rotate(-30deg) translateY(-10px); }
+}
+@keyframes flexRight {
+    0%, 100% { transform: rotate(10deg) translateY(0); }
+    50% { transform: rotate(30deg) translateY(-10px); }
+}
